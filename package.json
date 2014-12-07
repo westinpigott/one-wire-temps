@@ -1,0 +1,30 @@
+{
+  "name": "one-wire-temps",
+  "version": "0.1.0",
+  "description": "A package to enable gathering one or more temperatures form the one-wire protocol using johnny-five and firmatta.",
+  "main": "OneWireTemps.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/westinpigott/one-wire-temps.git"
+  },
+  "keywords": [
+    "one-wire",
+    "johnny-five",
+    "firmatta",
+    "temperature"
+  ],
+  "author": "Westin Pigott",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/westinpigott/one-wire-temps/issues"
+  },
+  "homepage": "https://github.com/westinpigott/one-wire-temps",
+  "dependencies": {
+	"events":"",
+	"johnny-five":"",
+	"util":""
+  }
+}
