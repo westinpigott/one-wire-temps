@@ -17,6 +17,7 @@ var OneWireTemps = function(board, pin, config){
 	var _lastUpdate = [];
 	var _devices = [];
 	var _isReady = false;
+	var _isInitialized = false;
 	var _cycleDelay = 0;
 	var _nextDeviceDelay = 0;
 	var _config = config;
@@ -44,25 +45,25 @@ var OneWireTemps = function(board, pin, config){
 					_temps.push(0);
 				}
 			}
-			_isReady = true;
-			// emit ready event
-			this.emit("ready");
+			_isInitialized = true;
+			// emit initialized event
+			this.emit("Initialized");
 		}.bind(this));
 		
-		this.on("ready", function() {
-			readTemperatures(this);
+		this.on("Initialized", function() {
+			readTemperatures();
 		});
 	}.bind(this));
 	
 	var handeConfig = function(config) {
 		if(typeof config === "object") {
-			if(typeof config.cycleDelay === "integer") { _cycleDelay = config.cycleDelay; }
-			if(typeof config.nextDeviceDelay === "integer") { _nextDeviceDelay = config.nextDeviceDelay; }
+			if(typeof config.cycleDelay === "number") { _cycleDelay = config.cycleDelay; }
+			if(typeof config.nextDeviceDelay === "number") { _nextDeviceDelay = config.nextDeviceDelay; }
 		}
 	}
 
 	var readTemperatures = function readTemperatures() {
-		if(_isReady !== true) {
+		if(_isInitialized !== true) {
 			console.log('Not yet initialized.  Waiting 5ms.');
 			setTimeout(readTemperatures,5);
 			return;
@@ -75,13 +76,18 @@ var OneWireTemps = function(board, pin, config){
 	}
 	
 	var readSingle = function(deviceNum) {
-		if(_isReady !== true) {
+		if(_isInitialized !== true) {
 			console.log('Not yet initialized.  Waiting 5ms.');
 			setTimeout(readSingle,5, deviceNum);
 			return;
 		}
 		
 		if(!(deviceNum in _devices)) {
+			if(!_isReady) {
+				_isReady = true;
+				this.emit("ready");
+			}
+			this.emit("CycleComplete");
 			setTimeout(readTemperatures, _cycleDelay);
 			return;
 		}		
@@ -100,9 +106,8 @@ var OneWireTemps = function(board, pin, config){
 				_lastUpdate[deviceNum] = new Date();
 			}
 			setTimeout(readSingle, _nextDeviceDelay, deviceNum+1);
-		}.bind(deviceNum));
-		
-	}
+		}.bind(deviceNum));		
+	}.bind(this);
 	
 	this.getTemperatures = function(unitType, callback) {
 		var temps = [];		

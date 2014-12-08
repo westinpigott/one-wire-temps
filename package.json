@@ -1,6 +1,6 @@
 {
   "name": "one-wire-temps",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A package to enable gathering one or more temperatures form the one-wire protocol using johnny-five and firmatta.",
   "main": "OneWireTemps.js",
   "scripts": {
