@@ -8,7 +8,7 @@ var UNIT_TYPE_RAW = 'RAW';
 var UNIT_TYPE_CELCIUS = 'CELCIUS';
 var UNIT_TYPE_FARENHEIT = 'FARENHEIT';
 
-var OneWireTemps = function(board, pin){
+var OneWireTemps = function(board, pin, config){
 
 	// Setup properties
 	var _board = board;
@@ -17,9 +17,15 @@ var OneWireTemps = function(board, pin){
 	var _lastUpdate = [];
 	var _devices = [];
 	var _isReady = false;
+	var _cycleDelay = 0;
+	var _nextDeviceDelay = 0;
+	var _config = config;
+	
+	
 	
 	// Setup the callbacks once it is initialized
 	_board.on("ready", function initialize() {
+		handeConfig(_config);
 		_board.io.sendOneWireConfig(_pin, true);
 		_board.io.sendOneWireSearch(_pin, function(error, allDevices) {
 			if(error) {
@@ -47,6 +53,13 @@ var OneWireTemps = function(board, pin){
 			readTemperatures(this);
 		});
 	}.bind(this));
+	
+	var handeConfig = function(config) {
+		if(typeof config === "object") {
+			if(typeof config.cycleDelay === "integer") { _cycleDelay = config.cycleDelay; }
+			if(typeof config.nextDeviceDelay === "integer") { _nextDeviceDelay = config.nextDeviceDelay; }
+		}
+	}
 
 	var readTemperatures = function readTemperatures() {
 		if(_isReady !== true) {
@@ -58,7 +71,7 @@ var OneWireTemps = function(board, pin){
 			_board.io.sendOneWireReset(_pin);
 			_board.io.sendOneWireWrite(_pin, _devices[i], 0x44);
 		}
-		setTimeout(readSingle, 0, 0);
+		setTimeout(readSingle, _nextDeviceDelay, 0);
 	}
 	
 	var readSingle = function(deviceNum) {
@@ -69,7 +82,7 @@ var OneWireTemps = function(board, pin){
 		}
 		
 		if(!(deviceNum in _devices)) {
-			setTimeout(readTemperatures,0);
+			setTimeout(readTemperatures, _cycleDelay);
 			return;
 		}		
 		_board.io.sendOneWireReset(_pin);
@@ -81,26 +94,26 @@ var OneWireTemps = function(board, pin){
 				console.log(error);
 			}
 			if(data === null) {
-				console.log('Data is NULL for: ',deviceNum);
+				console.log('Data is NULL for: ', deviceNum);
 			} else {
-				_temps[deviceNum] = (data[1] << 8) | data[0];				
+				_temps[deviceNum] = (data[1] << 8) | data[0];
+				_lastUpdate[deviceNum] = new Date();
 			}
-			setTimeout(readSingle,0,deviceNum+1);
+			setTimeout(readSingle, _nextDeviceDelay, deviceNum+1);
 		}.bind(deviceNum));
 		
 	}
 	
 	this.getTemperatures = function(unitType, callback) {
-		var temps = [];
+		var temps = [];		
 		_temps.forEach(function(entry, index) {
 			temps[index] = retreiveSingleTemp(unitType, index);
 		});
-		callback(temps);
+		callback(temps, _lastUpdate);
 	}
 	
 	this.getSingleTemp = function(unitType, deviceNum, callback) {
-		
-		callback(retreiveSingleTemp(unitType, deviceNum));
+		callback(retreiveSingleTemp(unitType, deviceNum), _lastUpdate[deviceNum]);
 	}
 	
 	var retreiveSingleTemp = function(unitType, deviceNum) {
